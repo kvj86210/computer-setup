@@ -11,10 +11,10 @@
     Must be run from an elevated (Administrator) PowerShell.
 
 .EXAMPLE
-    .\Install-Apps.ps1
+    .\Setup-Computer.ps1
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\Install-Apps.ps1
+    powershell -ExecutionPolicy Bypass -File .\Setup-Computer.ps1
 #>
 
 #Requires -Version 5.1

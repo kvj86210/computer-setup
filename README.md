@@ -9,7 +9,7 @@ and creates a standard (non-administrator) local user account named `Ada`.
 Open PowerShell **as Administrator** and run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\Install-Apps.ps1
+powershell -ExecutionPolicy Bypass -File .\Setup-Computer.ps1
 ```
 
 You will be prompted for the new account's password. Everything else is
@@ -25,7 +25,7 @@ non-interactive. The script is safe to re-run; anything already present is skipp
 | Steam           | `Valve.Steam`      |
 | Mozilla Firefox | `Mozilla.Firefox`  |
 
-To add one, find its ID and add a line to the `$Apps` array in `Install-Apps.ps1`:
+To add one, find its ID and add a line to the `$Apps` array in `Setup-Computer.ps1`:
 
 ```powershell
 winget search "<app name>"
