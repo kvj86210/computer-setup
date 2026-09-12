@@ -35,8 +35,11 @@ $Apps = @(
     @{ Name = 'Mozilla Firefox'; Id = 'Mozilla.Firefox' }
 )
 
-# --- Standard user account to create ----------------------------------------
-$UserName = 'Ada'
+# --- Local user accounts to create -------------------------------------------
+$Users = @(
+    @{ Name = 'Ada'; Group = 'Users' }
+    @{ Name = 'dad'; Group = 'Administrators' }
+)
 
 # --- Preflight ---------------------------------------------------------------
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -86,18 +89,20 @@ Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlo
 Write-Host '    Privacy setup screens and first-logon animation disabled.' -ForegroundColor Green
 Write-Host ''
 
-# --- Standard user account ---------------------------------------------------
-Write-Host "==> User account '$UserName'" -ForegroundColor Yellow
-if (Get-LocalUser -Name $UserName -ErrorAction SilentlyContinue) {
-    Write-Host '    Already exists, skipping.' -ForegroundColor DarkGray
+# --- Local user accounts -----------------------------------------------------
+foreach ($user in $Users) {
+    Write-Host "==> User account '$($user.Name)' ($($user.Group))" -ForegroundColor Yellow
+    if (Get-LocalUser -Name $user.Name -ErrorAction SilentlyContinue) {
+        Write-Host '    Already exists, skipping.' -ForegroundColor DarkGray
+    }
+    else {
+        $password = Read-Host -Prompt "    Password for '$($user.Name)'" -AsSecureString
+        New-LocalUser -Name $user.Name -Password $password -PasswordNeverExpires -AccountNeverExpires | Out-Null
+        Add-LocalGroupMember -Group $user.Group -Member $user.Name
+        Write-Host "    Created (member of $($user.Group))." -ForegroundColor Green
+    }
+    Write-Host ''
 }
-else {
-    $password = Read-Host -Prompt "    Password for '$UserName'" -AsSecureString
-    New-LocalUser -Name $UserName -Password $password -PasswordNeverExpires -AccountNeverExpires | Out-Null
-    Add-LocalGroupMember -Group 'Users' -Member $UserName
-    Write-Host '    Created (standard user, no administrator rights).' -ForegroundColor Green
-}
-Write-Host ''
 
 # --- Summary -----------------------------------------------------------------
 Write-Host '---------------- Summary ----------------' -ForegroundColor Cyan

@@ -2,7 +2,8 @@
 
 PowerShell script that sets up a fresh Windows machine: installs my standard
 applications with [winget](https://learn.microsoft.com/windows/package-manager/winget/)
-and creates a standard (non-administrator) local user account named `Ada`.
+and creates two local user accounts: `Ada` (standard user) and `dad`
+(administrator).
 
 ## Usage
 
@@ -12,7 +13,7 @@ Open PowerShell **as Administrator** and run:
 powershell -ExecutionPolicy Bypass -File .\Setup-Computer.ps1
 ```
 
-You will be prompted for the new account's password. Everything else is
+You will be prompted for each new account's password. Everything else is
 non-interactive. The script is safe to re-run; anything already present is skipped.
 
 The first sign-in setup screens (privacy questions and the "getting things
