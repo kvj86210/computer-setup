@@ -1,17 +1,15 @@
 <#
 .SYNOPSIS
-    Creates a local, non-administrator user account.
+    Creates a local standard user account and sets Windows to log into it
+    automatically at boot.
 
 .DESCRIPTION
-    Prompts for a password, then creates a local account (no Microsoft account)
-    that is a member of "Users" only. The account is made the default selection
-    on the Windows sign-in screen.
+    Prompts for a password, creates a local (non-Microsoft) account in the
+    "Users" group, and enables automatic logon for it using the standard
+    Windows Winlogon registry settings.
 
     Must be run from an elevated (Administrator) PowerShell.
-    Safe to re-run: if the account already exists nothing is changed.
-
-.PARAMETER UserName
-    Name of the local account to create. Defaults to "Ada".
+    If the account already exists the script does nothing.
 
 .EXAMPLE
     .\New-StandardUser.ps1
@@ -22,8 +20,7 @@
 
 [CmdletBinding()]
 param(
-    [string] $UserName = 'Ada',
-    [string] $FullName = 'Ada'
+    [string] $UserName = 'Ada'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,41 +32,24 @@ if (Get-LocalUser -Name $UserName -ErrorAction SilentlyContinue) {
     exit 0
 }
 
-# --- Prompt for password (entered twice, never echoed) -----------------------
-while ($true) {
-    $password = Read-Host -Prompt "    Password for '$UserName'" -AsSecureString
-    $confirm  = Read-Host -Prompt '    Confirm password' -AsSecureString
-
-    if ($password.Length -eq 0) {
-        Write-Host '    Password cannot be empty. Try again.' -ForegroundColor Red
-        continue
-    }
-
-    $cred1 = New-Object System.Management.Automation.PSCredential ('x', $password)
-    $cred2 = New-Object System.Management.Automation.PSCredential ('x', $confirm)
-    if ($cred1.GetNetworkCredential().Password -cne $cred2.GetNetworkCredential().Password) {
-        Write-Host '    Passwords do not match. Try again.' -ForegroundColor Red
-        continue
-    }
-    break
+# --- Prompt for password -----------------------------------------------------
+$password = Read-Host -Prompt "    Password for '$UserName'" -AsSecureString
+if ($password.Length -eq 0) {
+    Write-Error 'Password cannot be empty.'
+    exit 1
 }
 
 # --- Create the account ------------------------------------------------------
-New-LocalUser -Name $UserName `
-              -FullName $FullName `
-              -Password $password `
-              -Description 'Standard (non-administrator) user' `
-              -PasswordNeverExpires `
-              -AccountNeverExpires | Out-Null
-
+New-LocalUser -Name $UserName -Password $password -PasswordNeverExpires -AccountNeverExpires | Out-Null
 Add-LocalGroupMember -Group 'Users' -Member $UserName
-Write-Host '    Created. Member of Users only.' -ForegroundColor Green
+Write-Host '    Created.' -ForegroundColor Green
 
-# --- Make it the default account on the sign-in screen -----------------------
-$sid     = (Get-LocalUser -Name $UserName).SID.Value
-$logonUi = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI'
-Set-ItemProperty -Path $logonUi -Name 'LastLoggedOnUser'        -Value ".\$UserName" -Type String
-Set-ItemProperty -Path $logonUi -Name 'LastLoggedOnSAMUser'     -Value ".\$UserName" -Type String
-Set-ItemProperty -Path $logonUi -Name 'LastLoggedOnDisplayName' -Value $FullName     -Type String
-Set-ItemProperty -Path $logonUi -Name 'LastLoggedOnUserSID'     -Value $sid          -Type String
-Write-Host '    Set as the default account on the sign-in screen.' -ForegroundColor Green
+# --- Automatic logon ---------------------------------------------------------
+# https://learn.microsoft.com/troubleshoot/windows-server/user-profiles-and-logon/turn-on-automatic-logon
+$plainPassword = (New-Object System.Management.Automation.PSCredential ($UserName, $password)).GetNetworkCredential().Password
+$winlogon = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+Set-ItemProperty -Path $winlogon -Name 'AutoAdminLogon'    -Value '1'
+Set-ItemProperty -Path $winlogon -Name 'DefaultUserName'   -Value $UserName
+Set-ItemProperty -Path $winlogon -Name 'DefaultDomainName' -Value $env:COMPUTERNAME
+Set-ItemProperty -Path $winlogon -Name 'DefaultPassword'   -Value $plainPassword
+Write-Host '    Automatic logon enabled. Reboot to verify.' -ForegroundColor Green

@@ -47,5 +47,5 @@ winget search "<app name>"
 
 `New-StandardUser.ps1` creates a **local** account named `Ada` (no Microsoft
 account) with the password you enter at the prompt. The account is a member of
-`Users` only, never `Administrators`, and is preselected on the Windows sign-in
-screen so it is the default account after a reboot.
+`Users` only, never `Administrators`. Automatic logon is enabled using the
+standard Windows Winlogon settings, so the machine boots straight into `Ada`.
