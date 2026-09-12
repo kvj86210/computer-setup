@@ -1,10 +1,14 @@
 <#
 .SYNOPSIS
-    Installs the standard set of applications on a fresh Windows machine using winget.
+    Sets up a fresh Windows machine: installs the standard set of applications
+    using winget and creates a standard (non-administrator) user account.
 
 .DESCRIPTION
     Iterates over a list of winget package IDs and installs each one that is not
-    already present. Safe to re-run: packages that are already installed are skipped.
+    already present, then creates the local user account if it does not exist.
+    Safe to re-run: anything already present is skipped.
+
+    Must be run from an elevated (Administrator) PowerShell.
 
 .EXAMPLE
     .\Install-Apps.ps1
@@ -14,6 +18,7 @@
 #>
 
 #Requires -Version 5.1
+#Requires -RunAsAdministrator
 
 [CmdletBinding()]
 param()
@@ -29,6 +34,9 @@ $Apps = @(
     @{ Name = 'Steam';           Id = 'Valve.Steam' }
     @{ Name = 'Mozilla Firefox'; Id = 'Mozilla.Firefox' }
 )
+
+# --- Standard user account to create ----------------------------------------
+$UserName = 'Ada'
 
 # --- Preflight ---------------------------------------------------------------
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -67,6 +75,19 @@ foreach ($app in $Apps) {
     }
     Write-Host ''
 }
+
+# --- Standard user account ---------------------------------------------------
+Write-Host "==> User account '$UserName'" -ForegroundColor Yellow
+if (Get-LocalUser -Name $UserName -ErrorAction SilentlyContinue) {
+    Write-Host '    Already exists, skipping.' -ForegroundColor DarkGray
+}
+else {
+    $password = Read-Host -Prompt "    Password for '$UserName'" -AsSecureString
+    New-LocalUser -Name $UserName -Password $password -PasswordNeverExpires -AccountNeverExpires | Out-Null
+    Add-LocalGroupMember -Group 'Users' -Member $UserName
+    Write-Host '    Created (standard user, no administrator rights).' -ForegroundColor Green
+}
+Write-Host ''
 
 # --- Summary -----------------------------------------------------------------
 Write-Host '---------------- Summary ----------------' -ForegroundColor Cyan
