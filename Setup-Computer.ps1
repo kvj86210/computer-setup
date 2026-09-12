@@ -76,6 +76,16 @@ foreach ($app in $Apps) {
     Write-Host ''
 }
 
+# --- Skip the first sign-in setup screens for new accounts -------------------
+Write-Host '==> First sign-in experience' -ForegroundColor Yellow
+$oobePolicy = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\OOBE'
+if (-not (Test-Path $oobePolicy)) { New-Item -Path $oobePolicy -Force | Out-Null }
+Set-ItemProperty -Path $oobePolicy -Name 'DisablePrivacyExperience' -Value 1 -Type DWord
+Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' `
+                 -Name 'EnableFirstLogonAnimation' -Value 0 -Type DWord
+Write-Host '    Privacy setup screens and first-logon animation disabled.' -ForegroundColor Green
+Write-Host ''
+
 # --- Standard user account ---------------------------------------------------
 Write-Host "==> User account '$UserName'" -ForegroundColor Yellow
 if (Get-LocalUser -Name $UserName -ErrorAction SilentlyContinue) {

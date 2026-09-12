@@ -15,6 +15,10 @@ powershell -ExecutionPolicy Bypass -File .\Setup-Computer.ps1
 You will be prompted for the new account's password. Everything else is
 non-interactive. The script is safe to re-run; anything already present is skipped.
 
+The first sign-in setup screens (privacy questions and the "getting things
+ready" animation) are disabled machine-wide, so new accounts land straight on
+the desktop.
+
 ## Applications
 
 | Application     | winget ID          |
